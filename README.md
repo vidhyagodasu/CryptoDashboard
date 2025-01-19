@@ -5,13 +5,14 @@
 1.Clone the repository:
    git clone https://github.com/vidhyagodasu/CryptoDashboard  
    cd CryptoDashboard  
-   or
+     
+   *(or)*
    
-    i. Click on 'Download Zip' from the <>Code Option
+   i. Click on 'Download Zip' from the <>Code Option
 
-    ii. Extract the Zip file 
+   ii. Extract the Zip file 
 
-    iii. Open that folder in a Code Editor
+   iii. Open that folder in a Code Editor
     
 3. Install dependencies:
     bash
