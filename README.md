@@ -2,7 +2,7 @@
 
 ## Setup Instructions
 *Install node from the official node.js website (https://nodejs.org)*
-1. 1. Clone the repository:
+1. Clone the repository:
    sh
     git clone https://github.com/vidhyagodasu/CryptoDashboard
     
