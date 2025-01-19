@@ -5,20 +5,20 @@
 1. Clone the repository:
     bash
     git clone https://github.com/vidhyagodasu/CryptoDashboard
-    cd CryptoDashboard or
+    cd CryptoDashboard
+           or
     
                  
-    
     i. Click on 'Download Zip' from the <>Code Option
     ii. Extract the Zip file 
     iii. Open that folder in a Code Editor
     
-2. Install dependencies:
+3. Install dependencies:
     bash
     npm install
     
 
-3. Start the development server:
+4. Start the development server:
     ```bash
     npm start
 
