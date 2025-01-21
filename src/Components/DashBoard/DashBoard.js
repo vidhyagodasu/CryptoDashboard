@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { CssBaseline, Box, Typography, AppBar, Toolbar, IconButton } from '@mui/material';
+import { CssBaseline, Box, Typography, AppBar, Toolbar, IconButton, Button } from '@mui/material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Masonry from '@mui/lab/Masonry';
 import TableComponent from './CryptoTable';
@@ -17,7 +17,13 @@ const Dashboard = () => {
     const error = useSelector((state) => state.crypto.error);
 
     const [tableGraphData, setTableGraphData] = useState([]);
+    const [sections, setSections] = useState([
+        { id: 'table', title: 'Crypto Data Table' },
+        { id: 'graph', title: 'Crypto Graph Representation' },
+        { id: 'cards', title: 'Crypto Card Data' },
+    ]);
     const [components, setComponents] = useState([]);
+    const [removedSections, setRemovedSections] = useState([]);
     const [darkMode, setDarkMode] = useState(false);
     const [isPreloading, setIsPreloading] = useState(true);
 
@@ -70,13 +76,65 @@ const Dashboard = () => {
     const onDragEnd = (result) => {
         if (!result.destination) return;
 
-        const reorderedItems = Array.from(components);
-        const [reorderedItem] = reorderedItems.splice(result.source.index, 1);
-        reorderedItems.splice(result.destination.index, 0, reorderedItem);
+        const reorderedSections = Array.from(sections);
+        const [reorderedSection] = reorderedSections.splice(result.source.index, 1);
+        reorderedSections.splice(result.destination.index, 0, reorderedSection);
 
-        setComponents(reorderedItems);
+        setSections(reorderedSections);
+    };
 
-        localStorage.setItem('crypto-dashboard-layout', JSON.stringify(reorderedItems));
+    const handleExport = () => {
+        const layoutConfig = {
+            sections,
+            components,
+            theme: darkMode ? 'dark' : 'light',
+        };
+        const jsonConfig = JSON.stringify(layoutConfig, null, 2);
+        const blob = new Blob([jsonConfig], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'dashboard-layout.json';
+        link.click();
+    };
+
+    const handleImport = (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+    
+        reader.onload = (e) => {
+            try {
+                const importedConfig = JSON.parse(e.target.result);
+                if (importedConfig.sections && importedConfig.components && importedConfig.theme) {
+                    setSections(importedConfig.sections); 
+                    setComponents(importedConfig.components); 
+                    setDarkMode(importedConfig.theme === 'dark'); 
+                } else {
+                    alert('Invalid JSON configuration.');
+                }
+            } catch (error) {
+                alert('Failed to import layout.');
+            }
+        };
+    
+        if (file) {
+            reader.readAsText(file);
+        }
+    };
+
+    const handleRemoveSection = (id) => {
+        const removedSection = sections.find((section) => section.id === id);
+        const updatedSections = sections.filter((section) => section.id !== id);
+
+        setSections(updatedSections);
+        setRemovedSections((prev) => [...prev, removedSection]);
+    };
+
+    const restoreSection = (id) => {
+        const restoredSection = removedSections.find((section) => section.id === id);
+        const updatedRemovedSections = removedSections.filter((section) => section.id !== id);
+
+        setRemovedSections(updatedRemovedSections);
+        setSections((prev) => [...prev, restoredSection]);
     };
 
     const handleRemove = (id) => {
@@ -129,8 +187,28 @@ const Dashboard = () => {
             <AppBar position="static">
                 <Toolbar>
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                        DASHBOARD
+                        Crypto DashBoard
                     </Typography>
+                    <Button
+                        color="inherit"
+                        onClick={handleExport}
+                        sx={{ marginRight: 2 }}
+                    >
+                        Export Layout
+                    </Button>
+                    <Button
+                        color="inherit"
+                        component="label"
+                        sx={{ marginRight: 2 }}
+                    >
+                        Import Layout
+                        <input
+                            type="file"
+                            accept="application/json"
+                            hidden
+                            onChange={handleImport}
+                        />
+                    </Button>
                     <IconButton
                         color="inherit"
                         onClick={() => setDarkMode(!darkMode)}
@@ -141,65 +219,105 @@ const Dashboard = () => {
                 </Toolbar>
             </AppBar>
             <Container maxWidth="xl">
-                <Box sx={{ padding: '16px' }}>
-                    <Box sx={{ my: 2 }}>
-                        <Typography variant="h4" sx={{ my: 4, textAlign: 'center' }}>
-                            Crypto Data Table
-                        </Typography>
-                        <TableComponent tableData={tableGraphData} visibleFields={Object.keys(tableGraphData[0] || {})} />
-                    </Box>
-                    <Box sx={{ my: 2 }}>
-                        <Typography variant="h4" sx={{ my: 4, textAlign: 'center',mt:6 }}>
-                            Crypto Graph Representation
-                        </Typography>
-                        <LineChartComponent data={tableGraphData} />
-                    </Box>
-
-                    <DragDropContext onDragEnd={onDragEnd}>
-                        <Typography variant="h4" sx={{ my: 4, textAlign: 'center',mt:9 }}>
-                            Crypto Card Data
-                        </Typography>
-                        <Droppable droppableId="dashboard" direction="vertical">
-                            {(provided) => (
-                                <Box
-                                    {...provided.droppableProps}
-                                    ref={provided.innerRef}
-                                    sx={{
-                                        padding: 3,
-                                        background: theme.palette.background.default,
-                                        minHeight: 400,
-                                    }}
-                                >
-                                    <Masonry columns={{ md: 2, lg: 3 }} spacing={2}>
-                                        {components.map((comp, index) => (
-                                            <Draggable key={comp.Id} draggableId={String(comp.Id)} index={index}>
-                                                {(provided) => (
-                                                    <Box
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
-                                                        sx={{
-                                                            userSelect: 'none',
-                                                            backgroundColor: theme.palette.background.paper,
-                                                            borderRadius: 4,
-                                                            boxShadow: `0 1px 3px ${darkMode ? '#fff' : 'rgba(0,0,0,0.2)'}`,
-                                                            ...provided.draggableProps.style,
-                                                        }}
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="sections" direction="vertical">
+                        {(provided) => (
+                            <Box {...provided.droppableProps} ref={provided.innerRef} sx={{ padding: 3, minHeight: 400 }}>
+                                {sections.map((section, index) => (
+                                    <Draggable key={section.id} draggableId={section.id} index={index}>
+                                        {(provided) => (
+                                            <Box
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                sx={{
+                                                    marginBottom: 4,
+                                                    backgroundColor: theme.palette.background.paper,
+                                                    borderRadius: 4,
+                                                    boxShadow: 3,
+                                                    padding: 3,
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="h5">{section.title}</Typography>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        size="small"
+                                                        onClick={() => handleRemoveSection(section.id)}
                                                     >
-                                                        <SummaryCard
-                                                            data={comp}
-                                                            onRemove={() => handleRemove(comp.Id)}
-                                                        />
-                                                    </Box>
+                                                        Delete
+                                                    </Button>
+                                                </Box>
+                                                {section.id === 'table' && (
+                                                    <TableComponent
+                                                        tableData={tableGraphData}
+                                                        visibleFields={Object.keys(tableGraphData[0] || {})}
+                                                    />
                                                 )}
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                    </Masonry>
-                                </Box>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
+                                                {section.id === 'graph' && (
+                                                    <LineChartComponent data={tableGraphData} />
+                                                )}
+                                                {section.id === 'cards' && (
+                                                    <Masonry columns={{ md: 2, lg: 3 }} spacing={2}>
+                                                        {components.map((comp) => (
+                                                            <SummaryCard
+                                                                key={comp.Id}
+                                                                data={comp}
+                                                                onRemove={() => handleRemove(comp.Id)}
+                                                            />
+                                                        ))}
+                                                    </Masonry>
+                                                )}
+                                            </Box>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </Box>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        bottom: 10,
+                        right: 0,
+                        width: 300,
+                        height: '30vh',
+                        backgroundColor: theme.palette.background.paper,
+                        borderRadius: '25px',
+                        boxShadow: 3,
+                        padding: 2,
+                        overflowY: 'auto',
+                    }}
+                >
+                    <Typography variant="h6" sx={{ textAlign: 'center', marginBottom: 2 }}>
+                        Removed Components
+                    </Typography>
+                    {removedSections.map((section) => (
+                        <Box
+                            key={section.id}
+                            sx={{
+                                padding: 2,
+                                marginBottom: 2,
+                                backgroundColor: theme.palette.background.default,
+                                borderRadius: 4,
+                                boxShadow: 2,
+                            }}
+                        >
+                            <Typography variant="body1">{section.title}</Typography>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => restoreSection(section.id)}
+                                sx={{ marginTop: 1 }}
+                            >
+                                Add back
+                            </Button>
+                        </Box>
+                    ))}
                 </Box>
             </Container>
         </ThemeProvider>
