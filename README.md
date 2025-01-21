@@ -49,3 +49,7 @@ This project is a Drag-and-Drop Data Visualization Dashboard built with React.js
 1. **Provided a Search Bar to Search for User required Crypto Currency Information**
 
 2. **Provided an option to toggle between Line Chart and Bar Chart**
+
+## Limitations
+1. Polled the end point for every 500 seconds instead of 5 seconds as polling for every 5 seconds raising a network error
+   
